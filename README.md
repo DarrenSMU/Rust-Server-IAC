@@ -15,6 +15,7 @@ terraform init
 export AWS_ACCESS_KEY_ID="anaccesskey"
 export AWS_SECRET_ACCESS_KEY="asecretkey"
 export TF_VAR_public_key="ssh-rsa asdasdcsca....."
+export TF_VAR_private_ip_address="xxx.xxx.xxx.xxx" # Your house's public ip
 terraform plan
 terraform apply
 ```
