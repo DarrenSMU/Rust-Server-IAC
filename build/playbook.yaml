@@ -1,0 +1,103 @@
+- name: Install and run Rust Server
+  hosts: all
+  vars:
+    rust_dir : "/usr/games/rust"
+    steamcmd_id: "anonymous"
+    rust_app_id: "258550"
+    server_identity: "rust_main"
+
+  tasks:
+  - name: Update and Upgrade OS
+    apt:
+      update_cache: yes
+      upgrade: dist
+    become: yes
+
+  - name: Add specified repository into sources list
+    apt_repository:
+      repo: "{{ item }}"
+    loop:
+      - "deb http://archive.ubuntu.com/ubuntu/ focal multiverse"
+      - "deb http://archive.ubuntu.com/ubuntu/ focal-updates multiverse"
+      - "deb http://security.ubuntu.com/ubuntu/ focal-security multiverse"
+    become: yes
+  
+  - name: Enable i386 architecture
+    command: dpkg --add-architecture i386
+    become: yes
+  
+  - name: Accept Steam License
+    debconf:
+      name: steamcmd
+      question: steam/license
+      value: ''
+      vtype: note
+    become: yes
+
+  - name: Accept Steam Purge
+    debconf:
+      name: steamcmd
+      question: steam/purge
+      value: ''
+      vtype: note
+    become: yes
+  
+  - name: Accept Steam License
+    debconf:
+      name: steamcmd
+      question: steam/question
+      value: 'I AGREE'
+      vtype: select
+    become: yes
+
+  - name: Install lib-gcc
+    apt:
+      name: lib32gcc1
+      update_cache: yes
+      state: latest
+    become: yes
+    
+  - name: Install Steam Console Client
+    apt:
+      name: steamcmd
+      update_cache: yes
+      state: latest
+    become: yes
+
+  - name: Create Rust Server directory
+    file:
+      path: "{{ rust_dir }}/server/{{ server_identity }}"
+      state: directory
+      recurse: yes
+      mode: "0755"
+    become: yes
+
+  - name: Add yourself as an admin
+    lineinfile:
+      path: "{{ rust_dir }}/server/{{ server_identity }}/cfg/users.cfg"
+      line: ownerid "<Steam 64-bit ID>" "<username>" "<comment>"
+      create: yes
+      mode: "0755"
+    become: yes
+
+  - name: Install Rust Server
+    command: /usr/games/steamcmd +login {{ steamcmd_id }} +force_install_dir {{ rust_dir }} +app_update {{ rust_app_id }} +exit
+    become: yes
+  
+  - name: Run Rust Server in background and pipe logs
+    shell: cd /usr/games/rust; nohup ./RustDedicated -batchmode +server.maxplayers 100 +server.hostname "<hostname>" +server.identity "{{ server_identity }}" +server.seed 12345 +server.worldsize 4000 +server.description "<Description>" > /var/log/rust.log &
+    become: yes
+
+  - name: Wait until regex pattern matches in the file /var/log/rust.log and print success message
+    wait_for:
+      path: /var/log/rust.log
+      search_regex: SteamServer Connected
+      timeout: 9999999
+    register: waitfor
+  - debug:
+      msg: Server startup completed
+
+  
+
+
+
