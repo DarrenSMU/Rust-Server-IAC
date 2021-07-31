@@ -19,8 +19,8 @@ terraform plan
 terraform apply
 ```
 
-Copy ip from terraform output to build/inventory.yaml
-Set Steam admin credentails, server settings in build/playbook.yaml
+* Copy ip from terraform output to build/inventory.yaml
+* Set Steam admin credentails, server settings in build/playbook.yaml
 
 ```
 cd build
